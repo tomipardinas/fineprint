@@ -67,51 +67,116 @@ async function analyzeUrl(url, deviceId) {
     }, resolve);
   });
 
-  const payload = {
-    url,
-    device_id: deviceId,
-    preferences: {
-      privacy_level: settings.privacyLevel,
-      block_ad_sharing: settings.blockAdSharing,
-      alert_manipulation: settings.alertManipulation
-    }
+  const profile = {
+    privacy_level: settings.privacyLevel,
+    block_ad_sharing: settings.blockAdSharing,
+    alert_manipulation: settings.alertManipulation
   };
 
-  // Include user API key if set
-  const headers = { 'Content-Type': 'application/json' };
-  if (settings.apiKey) {
-    headers['X-Anthropic-API-Key'] = settings.apiKey;
-  }
-
   try {
-    const response = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload)
-    });
+    let response;
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('[Fineprint bg] Backend error:', response.status, errText);
-      return { success: false, error: `Backend error: ${response.status}` };
-    }
-
-    const data = await response.json();
-
-    // Cache successful response
-    await setCache(url, data);
-
-    // Store last analyzed for popup
-    chrome.storage.local.set({
-      lastAnalyzed: {
-        url,
-        timestamp: Date.now(),
-        score: computeOverallScore(data),
-        label: computeScoreLabel(data)
+    if (settings.apiKey) {
+      // ── BYO key: call Anthropic directly (no backend needed) ──────────────
+      // First fetch the ToS page text
+      let tosText = '';
+      try {
+        const pageRes = await fetch(url);
+        const html = await pageRes.text();
+        // Strip tags, normalize whitespace, truncate
+        tosText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
+      } catch (e) {
+        tosText = `Could not fetch page content from ${url}. Analyze based on URL only.`;
       }
-    });
 
-    return { success: true, data };
+      const systemPrompt = `You are a privacy and legal expert analyzing Terms of Service.
+Analyze and identify issues in 3 categories:
+1. PRIVACY — data collection, sharing with third parties, retention periods
+2. SECURITY — liability for breaches, data protection measures
+3. BEHAVIOR — dark patterns, opt-out vs opt-in, algorithmic manipulation, content rights
+
+For each finding return:
+- category: "privacy" | "security" | "behavior"
+- severity: "critical" | "warning" | "info"
+- title: short description (max 10 words)
+- description: explanation (max 30 words)
+- clause: exact quote from ToS (max 50 words)
+
+Return ONLY valid JSON: { "findings": [...], "overall_risk": "high"|"medium"|"low", "summary": "2 sentence summary" }
+${profile.block_ad_sharing ? 'Flag any data sharing with advertisers as critical.' : ''}
+${profile.alert_manipulation ? 'Flag behavioral manipulation and dark patterns.' : ''}
+Privacy sensitivity level: ${profile.privacy_level}/5 — higher means flag more aggressively.`;
+
+      const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': settings.apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-5',
+          max_tokens: 2048,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: `Analyze this Terms of Service:\n\n${tosText}` }]
+        })
+      });
+
+      if (!anthropicRes.ok) {
+        const err = await anthropicRes.text();
+        console.error('[Fineprint bg] Anthropic error:', err);
+        return { success: false, error: `Anthropic API error: ${anthropicRes.status}` };
+      }
+
+      const anthropicData = await anthropicRes.json();
+      const raw = anthropicData.content?.[0]?.text || '{}';
+      const parsed = JSON.parse(raw.match(/\{[\s\S]*\}/)?.[0] || '{}');
+
+      // Normalize to expected shape
+      const normalized = { findings: [], privacy: [], security: [], behavior: [], overall_risk: parsed.overall_risk || 'medium', summary: parsed.summary || '' };
+      for (const f of (parsed.findings || [])) {
+        normalized.findings.push(f);
+        if (f.category === 'privacy') normalized.privacy.push(f);
+        else if (f.category === 'security') normalized.security.push(f);
+        else normalized.behavior.push(f);
+      }
+
+      await setCache(url, normalized);
+      chrome.storage.local.set({ lastAnalyzed: { url, timestamp: Date.now(), score: computeOverallScore(normalized), label: computeScoreLabel(normalized) } });
+      return { success: true, data: normalized };
+
+    } else {
+      // ── No API key: call our backend ──────────────────────────────────────
+      const payload = { url, device_id: deviceId, preferences: profile };
+      response = await fetch(BACKEND_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('[Fineprint bg] Backend error:', response.status, errText);
+        return { success: false, error: `Backend error: ${response.status}` };
+      }
+
+      const data = await response.json();
+
+      // Cache successful response
+      await setCache(url, data);
+
+      // Store last analyzed for popup
+      chrome.storage.local.set({
+        lastAnalyzed: {
+          url,
+          timestamp: Date.now(),
+          score: computeOverallScore(data),
+          label: computeScoreLabel(data)
+        }
+      });
+
+      return { success: true, data };
+    } // end else (backend path)
   } catch (err) {
     console.error('[Fineprint bg] Fetch failed:', err);
     return { success: false, error: err.message };
