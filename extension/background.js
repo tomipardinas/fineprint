@@ -112,10 +112,11 @@ Privacy sensitivity level: ${profile.privacy_level}/5 — higher means flag more
         headers: {
           'Content-Type': 'application/json',
           'x-api-key': settings.apiKey,
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-5',
+          model: 'claude-sonnet-4-5-20250514',
           max_tokens: 2048,
           system: systemPrompt,
           messages: [{ role: 'user', content: `Analyze this Terms of Service:\n\n${tosText}` }]
@@ -135,6 +136,10 @@ Privacy sensitivity level: ${profile.privacy_level}/5 — higher means flag more
       // Normalize to expected shape
       const normalized = { findings: [], privacy: [], security: [], behavior: [], overall_risk: parsed.overall_risk || 'medium', summary: parsed.summary || '' };
       for (const f of (parsed.findings || [])) {
+        if (f.severity === 'critical') f.severity = 'red';
+        else if (f.severity === 'warning') f.severity = 'yellow';
+        else if (f.severity === 'info') f.severity = 'green';
+        if (!f.summary) f.summary = f.title || f.description || '';
         normalized.findings.push(f);
         if (f.category === 'privacy') normalized.privacy.push(f);
         else if (f.category === 'security') normalized.security.push(f);
@@ -160,7 +165,22 @@ Privacy sensitivity level: ${profile.privacy_level}/5 — higher means flag more
         return { success: false, error: `Backend error: ${response.status}` };
       }
 
-      const data = await response.json();
+      const raw = await response.json();
+
+      // Normalize: group flat findings into category arrays and map severities
+      const data = { findings: [], privacy: [], security: [], behavior: [], overall_risk: raw.overall_risk || 'medium', summary: raw.summary || '' };
+      for (const f of (raw.findings || [])) {
+        // Map severity names to color names used by the UI
+        if (f.severity === 'critical') f.severity = 'red';
+        else if (f.severity === 'warning') f.severity = 'yellow';
+        else if (f.severity === 'info') f.severity = 'green';
+        // Map title/description to summary for UI
+        if (!f.summary) f.summary = f.title || f.description || '';
+        data.findings.push(f);
+        if (f.category === 'privacy') data.privacy.push(f);
+        else if (f.category === 'security') data.security.push(f);
+        else data.behavior.push(f);
+      }
 
       // Cache successful response
       await setCache(url, data);
@@ -190,8 +210,8 @@ function computeOverallScore(data) {
     ...(data.security || []),
     ...(data.behavior || [])
   ];
-  const reds    = allFindings.filter(f => f.severity === 'red').length;
-  const yellows = allFindings.filter(f => f.severity === 'yellow').length;
+  const reds    = allFindings.filter(f => f.severity === 'red' || f.severity === 'critical').length;
+  const yellows = allFindings.filter(f => f.severity === 'yellow' || f.severity === 'warning').length;
   if (reds > 0) return 'red';
   if (yellows > 0) return 'yellow';
   return 'green';

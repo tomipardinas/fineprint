@@ -120,7 +120,7 @@ Do not include markdown, code fences, or any text outside the JSON.${profileCont
   let result;
   try {
     const message = await client.messages.create({
-      model: "claude-opus-4-5",
+      model: "claude-sonnet-4-5-20250514",
       max_tokens: 2048,
       messages: [
         {
