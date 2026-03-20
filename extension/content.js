@@ -11,7 +11,7 @@
   // ─── ToS Detection ────────────────────────────────────────────────────────
 
   const TOS_BUTTON_PATTERNS = /\b(accept|i agree|agree and continue|agree & continue|accept all|accept terms|accept and continue|siguiente|continuar|aceptar|acepto|j'accepte|accepter|akzeptieren|ich stimme zu|concordo|aceitar)\b/i;
-  const TOS_LABEL_PATTERNS = /\b(terms|privacy|agree|tos|terms of service|terms and conditions|privacy policy|términos|condiciones|privacidad|politique de confidentialité|conditions d'utilisation|datenschutz|nutzungsbedingungen|termos|privacidade)\b/i;
+  const TOS_LABEL_PATTERNS = /(?:^|\s|[,.])(terms|privacy|agree|tos|terms of service|terms and conditions|privacy policy|términos|condiciones|privacidad|politique de confidentialité|conditions d'utilisation|datenschutz|nutzungsbedingungen|termos|privacidade)(?:\s|[,.]|$)/i;
   const TOS_HREF_PATTERNS = /\/(terms|privacy|tos|legal|conditions|eula|user-agreement|terminos|privacidad|datenschutz|nutzungsbedingungen|politique|confidentialite)|legal\.\w+\.\w+/i;
 
   function findTosUrl() {
@@ -29,7 +29,7 @@
     // Check surrounding text within a reasonable DOM radius
     const parent = el.closest('form, section, div, label') || el.parentElement;
     if (!parent) return false;
-    return TOS_LABEL_PATTERNS.test(parent.innerText || '');
+    return TOS_LABEL_PATTERNS.test(parent.innerText || parent.textContent || '');
   }
 
   function scanForTosElements() {
