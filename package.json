@@ -1,0 +1,9 @@
+{
+  "name": "fineprint-api",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.40.0",
+    "stripe": "^14.0.0"
+  }
+}
