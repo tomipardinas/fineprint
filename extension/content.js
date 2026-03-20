@@ -278,8 +278,8 @@
   }
 
   // Manual trigger from popup
-  window.addEventListener('fineprint:analyze', () => {
-    if (!overlayActive) {
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === 'FINEPRINT_ANALYZE' && !overlayActive) {
       detectedTosUrl = findTosUrl();
       showOverlay(null);
     }

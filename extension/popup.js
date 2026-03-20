@@ -43,14 +43,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Inject content script trigger via scripting API
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          // Dispatch a custom event to trigger manual analysis
-          window.dispatchEvent(new CustomEvent('fineprint:analyze'));
-        }
-      });
+      // Send message to content script to trigger analysis
+      await chrome.tabs.sendMessage(tab.id, { type: 'FINEPRINT_ANALYZE' });
 
       statusEl.textContent = 'Overlay triggered on page!';
     } catch (err) {
