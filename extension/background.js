@@ -49,7 +49,7 @@ async function setCache(url, data) {
 
 // ─── Analysis fetch ───────────────────────────────────────────────────────
 
-async function analyzeUrl(url, deviceId) {
+async function analyzeUrl(url, deviceId, pageText) {
   // Check cache first
   const cached = await getCached(url);
   if (cached) {
@@ -78,15 +78,18 @@ async function analyzeUrl(url, deviceId) {
 
     if (settings.apiKey) {
       // ── BYO key: call Anthropic directly (no backend needed) ──────────────
-      // First fetch the ToS page text
+      // Use page text from the content script if available, otherwise fetch
       let tosText = '';
-      try {
-        const pageRes = await fetch(url);
-        const html = await pageRes.text();
-        // Strip tags, normalize whitespace, truncate
-        tosText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
-      } catch (e) {
-        tosText = `Could not fetch page content from ${url}. Analyze based on URL only.`;
+      if (pageText) {
+        tosText = pageText.slice(0, 8000);
+      } else {
+        try {
+          const pageRes = await fetch(url);
+          const html = await pageRes.text();
+          tosText = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 8000);
+        } catch (e) {
+          tosText = `Could not fetch page content from ${url}. Analyze based on URL only.`;
+        }
       }
 
       const systemPrompt = `You are a privacy and legal expert analyzing Terms of Service.
@@ -152,7 +155,7 @@ Privacy sensitivity level: ${profile.privacy_level}/5 — higher means flag more
 
     } else {
       // ── No API key: call our backend ──────────────────────────────────────
-      const payload = { url, device_id: deviceId, preferences: profile };
+      const payload = { url, device_id: deviceId, preferences: profile, page_text: pageText || '' };
       response = await fetch(BACKEND_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -228,7 +231,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type === 'ANALYZE_TOS') {
     (async () => {
       const deviceId = message.device_id || await getOrCreateDeviceId();
-      const result = await analyzeUrl(message.url, deviceId);
+      const result = await analyzeUrl(message.url, deviceId, message.pageText);
       sendResponse(result);
     })();
 

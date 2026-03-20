@@ -10,9 +10,9 @@
 
   // ─── ToS Detection ────────────────────────────────────────────────────────
 
-  const TOS_BUTTON_PATTERNS = /\b(accept|i agree|agree and continue|agree & continue|accept all|accept terms|accept and continue)\b/i;
-  const TOS_LABEL_PATTERNS = /\b(terms|privacy|agree|tos|terms of service|terms and conditions|privacy policy)\b/i;
-  const TOS_HREF_PATTERNS = /\/(terms|privacy|tos|legal|conditions|eula|user-agreement)/i;
+  const TOS_BUTTON_PATTERNS = /\b(accept|i agree|agree and continue|agree & continue|accept all|accept terms|accept and continue|siguiente|continuar|aceptar|acepto|j'accepte|accepter|akzeptieren|ich stimme zu|concordo|aceitar)\b/i;
+  const TOS_LABEL_PATTERNS = /\b(terms|privacy|agree|tos|terms of service|terms and conditions|privacy policy|términos|condiciones|privacidad|politique de confidentialité|conditions d'utilisation|datenschutz|nutzungsbedingungen|termos|privacidade)\b/i;
+  const TOS_HREF_PATTERNS = /\/(terms|privacy|tos|legal|conditions|eula|user-agreement|terminos|privacidad|datenschutz|nutzungsbedingungen|politique|confidentialite)|legal\.\w+\.\w+/i;
 
   function findTosUrl() {
     // Look for links with TOS-related hrefs
@@ -44,7 +44,14 @@
       }
     }
 
-    // 2. Checkboxes near terms text
+    // 2. Buttons near terms/privacy text (e.g. "Siguiente" next to "Términos")
+    for (const btn of buttons) {
+      if (isNearTosText(btn)) {
+        return btn;
+      }
+    }
+
+    // 3. Checkboxes near terms text
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     for (const cb of checkboxes) {
       if (isNearTosText(cb)) {
@@ -185,10 +192,13 @@
     // Fetch analysis
     try {
       const deviceId = await getDeviceId();
+      // Grab visible page text from the live DOM so we don't rely on server-side fetch
+      const pageText = document.body.innerText.replace(/\s+/g, ' ').trim().slice(0, 12000);
       const result = await chrome.runtime.sendMessage({
         type: 'ANALYZE_TOS',
         url: detectedTosUrl,
-        device_id: deviceId
+        device_id: deviceId,
+        pageText: pageText
       });
 
       if (result && result.success) {
