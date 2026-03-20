@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fineprint</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #1e293b;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+      color: #fff;
+      padding: 16px 18px;
+    }
+
+    .header h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .header p {
+      font-size: 11px;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+
+    .body {
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .last-site {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .last-site .label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .last-site .site-name {
+      font-size: 13px;
+      color: #334155;
+      word-break: break-all;
+    }
+
+    .last-site .site-name.empty {
+      color: #94a3b8;
+      font-style: italic;
+    }
+
+    .last-score {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .score-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .score-dot.red    { background: #ef4444; }
+    .score-dot.yellow { background: #f59e0b; }
+    .score-dot.green  { background: #22c55e; }
+
+    .score-text {
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: #1e3a5f;
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: #0f2a4f; }
+    .btn-primary:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .settings-link {
+      text-align: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    .settings-link a {
+      color: #1e3a5f;
+      text-decoration: none;
+    }
+
+    .settings-link a:hover {
+      text-decoration: underline;
+    }
+
+    .status {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      min-height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔍 Fineprint</h1>
+    <p>AI reads Terms of Service before you accept them</p>
+  </div>
+  <div class="body">
+    <div class="last-site">
+      <div class="label">Last Analyzed</div>
+      <div class="site-name" id="last-site-name">No sites analyzed yet</div>
+      <div class="last-score" id="last-score" style="display:none;">
+        <div class="score-dot" id="score-dot"></div>
+        <div class="score-text" id="score-text"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="analyze-btn">Analyze Current Page</button>
+    <div class="status" id="status"></div>
+    <div class="settings-link">
+      <a href="#" id="settings-link">⚙️ Settings</a>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

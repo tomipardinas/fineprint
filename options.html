@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fineprint Settings</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 40px 16px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .page-header {
+      margin-bottom: 28px;
+    }
+
+    .page-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .page-header p {
+      font-size: 14px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field:last-child { margin-bottom: 0; }
+
+    .field label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    .field .hint {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+
+    .field input[type="text"],
+    .field input[type="password"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1e293b;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input[type="text"]:focus,
+    .field input[type="password"]:focus {
+      border-color: #1e3a5f;
+      background: #fff;
+    }
+
+    /* Toggle switch */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      margin-bottom: 14px;
+    }
+
+    .toggle-row:last-child { margin-bottom: 0; }
+
+    .toggle-label {
+      font-size: 14px;
+      color: #334155;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #cbd5e1;
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .toggle input:checked + .toggle-slider {
+      background: #1e3a5f;
+    }
+
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(20px);
+    }
+
+    /* Slider */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .slider-row input[type="range"] {
+      flex: 1;
+      accent-color: #1e3a5f;
+    }
+
+    .slider-value {
+      width: 24px;
+      text-align: center;
+      font-weight: 600;
+      color: #1e3a5f;
+      font-size: 14px;
+    }
+
+    /* Save button */
+    .save-btn {
+      width: 100%;
+      padding: 12px;
+      background: #1e3a5f;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-top: 4px;
+    }
+
+    .save-btn:hover { background: #0f2a4f; }
+
+    .save-status {
+      text-align: center;
+      font-size: 13px;
+      color: #22c55e;
+      margin-top: 10px;
+      min-height: 18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="page-header">
+      <h1>🔍 Fineprint Settings</h1>
+      <p>Configure how Fineprint reads the fine print for you.</p>
+    </div>
+
+    <!-- API Key -->
+    <div class="card">
+      <div class="card-title">API Access</div>
+      <div class="field">
+        <label for="api-key">Anthropic API Key <em style="font-weight:400;color:#94a3b8">(optional)</em></label>
+        <input type="password" id="api-key" placeholder="sk-ant-…" autocomplete="off" />
+        <div class="hint">If provided, your key is used directly for unlimited analyses. Otherwise, our shared backend is used.</div>
+      </div>
+    </div>
+
+    <!-- Behavior -->
+    <div class="card">
+      <div class="card-title">Detection Behavior</div>
+      <div class="toggle-row">
+        <span class="toggle-label">Auto-analyze on ToS detection</span>
+        <label class="toggle">
+          <input type="checkbox" id="auto-analyze" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Show overlay before accepting</span>
+        <label class="toggle">
+          <input type="checkbox" id="show-overlay" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Privacy Profile -->
+    <div class="card">
+      <div class="card-title">Privacy Profile</div>
+      <div class="field">
+        <label>How important is privacy to you?</label>
+        <div class="slider-row">
+          <span style="font-size:12px;color:#94a3b8">Low</span>
+          <input type="range" id="privacy-level" min="1" max="5" value="3" />
+          <span style="font-size:12px;color:#94a3b8">High</span>
+          <span class="slider-value" id="privacy-level-val">3</span>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Block targeted advertising data sharing?</span>
+        <label class="toggle">
+          <input type="checkbox" id="block-ad-sharing" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-label">Alert on behavioral manipulation clauses?</span>
+        <label class="toggle">
+          <input type="checkbox" id="alert-manipulation" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <button class="save-btn" id="save-btn">Save Settings</button>
+    <div class="save-status" id="save-status"></div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
